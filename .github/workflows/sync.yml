@@ -1,0 +1,31 @@
+name: sync
+
+on:
+  schedule:
+    - cron: "47 18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Convert pluwen allow-list to sing-box rule set
+        run: python3 convert.py
+      - name: Commit changes
+        run: |
+          if git diff --quiet -- china-domains.json; then
+            echo "no update"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add china-domains.json
+          git commit -m "sync from pluwen/china-domain-allowlist"
+          git push
